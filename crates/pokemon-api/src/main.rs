@@ -6,14 +6,23 @@ use aws_lambda_events::{
 };
 use http::header::HeaderMap;
 use lambda_runtime::{handler_fn, Context, Error};
+use once_cell::sync::OnceCell;
 use serde::Serialize;
 use serde_json::json;
-use sqlx::mysql::MySqlPoolOptions;
+use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 use std::env;
+
+static POOL: OnceCell<Pool<MySql>> = OnceCell::new();
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     println!("cold start");
+    let database_url = env::var("DATABASE_URL")?;
+    let pool = MySqlPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await?;
+    POOL.get_or_init(|| pool);
     let processor = handler_fn(handler);
     lambda_runtime::run(processor).await?;
     Ok(())
@@ -30,7 +39,6 @@ async fn handler(
     _: Context,
 ) -> Result<ApiGatewayProxyResponse, Error> {
     println!("handler");
-    let database_url = env::var("DATABASE_URL")?;
 
     let path = event
         .path
@@ -54,16 +62,12 @@ async fn handler(
         }
         None => panic!("requested_pokemon is None, which should never happen"),
         Some(pokemon_name) => {
-            let pool = MySqlPoolOptions::new()
-                .max_connections(5)
-                .connect(&database_url)
-                .await?;
             let result = sqlx::query_as!(
                     PokemonHp,
                     r#"SELECT name, hp FROM pokemon WHERE slug = ?"#,
                     pokemon_name
                 )
-                .fetch_one(&pool)
+                .fetch_one(POOL.get().unwrap())
                 .await?;
 
             let json_pokemon =
@@ -94,6 +98,15 @@ mod tests {
 
     #[tokio::test]
     async fn handler_handles() {
+        let database_url =
+            env::var("DATABASE_URL").unwrap();
+        let pool = MySqlPoolOptions::new()
+            .max_connections(5)
+            .connect(&database_url)
+            .await
+            .unwrap();
+        POOL.get_or_init(|| pool);
+
         let event = fake_request(
             "/api/pokemon/bulbasaur".to_string(),
         );
