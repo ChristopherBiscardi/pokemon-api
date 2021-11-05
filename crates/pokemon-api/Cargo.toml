@@ -16,3 +16,4 @@ sqlx = { version = "0.5.9", features = ["mysql", "runtime-tokio-rustls"] }
 tokio = "1.13.0"
 tracing = "0.1.29"
 tracing-subscriber = "0.3.1"
+upload-pokemon-data = { path = "../upload-pokemon-data" }
