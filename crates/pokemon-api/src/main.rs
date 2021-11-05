@@ -11,7 +11,7 @@ use serde::Serialize;
 use serde_json::json;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 use std::env;
-use tracing::instrument;
+use tracing::{error, info, instrument};
 
 static POOL: OnceCell<Pool<MySql>> = OnceCell::new();
 
@@ -47,6 +47,7 @@ async fn handler(
 
     match requested_pokemon {
         Some("") => {
+            error!("searched for empty pokemon");
             let error_message =
                 serde_json::to_string(&json!({
                     "error": "searched for empty pokemon"
@@ -62,6 +63,7 @@ async fn handler(
         }
         None => panic!("requested_pokemon is None, which should never happen"),
         Some(pokemon_name) => {
+            info!(pokemon_name,"requested a pokemon");
             let result = sqlx::query_as!(
                     PokemonHp,
                     r#"SELECT name, hp FROM pokemon WHERE slug = ?"#,
