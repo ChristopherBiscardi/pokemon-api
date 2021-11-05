@@ -11,6 +11,7 @@ use serde::Serialize;
 use serde_json::json;
 use sqlx::{mysql::MySqlPoolOptions, MySql, Pool};
 use std::env;
+use tracing::instrument;
 
 static POOL: OnceCell<Pool<MySql>> = OnceCell::new();
 
@@ -34,6 +35,7 @@ struct PokemonHp {
     hp: u16,
 }
 
+#[instrument]
 async fn handler(
     event: ApiGatewayProxyRequest,
     _: Context,
