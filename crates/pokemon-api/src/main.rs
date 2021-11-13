@@ -136,6 +136,11 @@ mod tests {
                 multi_value_headers: HeaderMap::new(),
                 body: Some(Body::Text(
                     serde_json::to_string(&PokemonHp {
+                        id: PokemonId::from_base62(
+                            "20RZ8HF3NBGVIY9PS7NcwYm8H7k"
+                                .to_string()
+                        )
+                        .unwrap(),
                         name: String::from("Bulbasaur"),
                         hp: 45,
                         legendary_or_mythical: false

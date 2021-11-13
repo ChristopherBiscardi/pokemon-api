@@ -91,6 +91,12 @@ impl PokemonId {
     pub fn new() -> Self {
         PokemonId(Ksuid::generate())
     }
+    pub fn from_base62(
+        base62_string: String,
+    ) -> std::io::Result<Self> {
+        let ksuid = Ksuid::from_base62(&base62_string)?;
+        Ok(PokemonId(ksuid))
+    }
 }
 
 impl From<PokemonCsv> for PokemonTableRow {
